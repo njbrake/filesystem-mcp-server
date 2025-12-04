@@ -45,12 +45,36 @@ for i in {1..30}; do
 done
 echo ""
 
-echo "Test 1: Listing tools..."
-TOOLS_RESPONSE=$(curl -sf -X POST "http://localhost:$PORT/mcp" \
+echo "Test 1: Initialize session..."
+INIT_RESPONSE=$(curl -s -X POST "http://localhost:$PORT/mcp" \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}')
+  -d '{
+    "jsonrpc":"2.0",
+    "method":"initialize",
+    "params":{
+      "protocolVersion":"2024-11-05",
+      "capabilities":{},
+      "clientInfo":{"name":"test-client","version":"1.0.0"}
+    },
+    "id":1
+  }')
 
-TOOL_COUNT=$(echo "$TOOLS_RESPONSE" | jq '.result.tools | length')
+if echo "$INIT_RESPONSE" | jq -e '.result' > /dev/null 2>&1; then
+  echo "✓ Session initialized"
+else
+  echo "✗ Session initialization failed"
+  echo "Response: $INIT_RESPONSE"
+  docker logs "$CONTAINER_NAME"
+  exit 1
+fi
+echo ""
+
+echo "Test 2: Listing tools..."
+TOOLS_RESPONSE=$(curl -s -X POST "http://localhost:$PORT/mcp" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":2}')
+
+TOOL_COUNT=$(echo "$TOOLS_RESPONSE" | jq '.result.tools | length' 2>/dev/null || echo "0")
 if [ "$TOOL_COUNT" -ge 8 ]; then
   echo "✓ Found $TOOL_COUNT tools"
 else
@@ -60,8 +84,8 @@ else
 fi
 echo ""
 
-echo "Test 2: Creating a file..."
-WRITE_RESPONSE=$(curl -sf -X POST "http://localhost:$PORT/mcp" \
+echo "Test 3: Creating a file..."
+WRITE_RESPONSE=$(curl -s -X POST "http://localhost:$PORT/mcp" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc":"2.0",
@@ -70,7 +94,7 @@ WRITE_RESPONSE=$(curl -sf -X POST "http://localhost:$PORT/mcp" \
       "name":"write_file",
       "arguments":{"path":"test.txt","content":"Hello from CI!"}
     },
-    "id":2
+    "id":3
   }')
 
 if echo "$WRITE_RESPONSE" | jq -e '.result' > /dev/null; then
