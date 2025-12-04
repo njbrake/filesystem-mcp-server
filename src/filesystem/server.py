@@ -9,24 +9,36 @@ from typing import Any
 
 import uvicorn
 from uvicorn import Config, Server
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 
-def create_trusted_host_middleware(app):
-    """Create middleware that accepts any Host header for Docker networking."""
+class TrustedHostMiddleware(BaseHTTPMiddleware):
+    """Middleware that accepts any Host header for Docker networking."""
 
-    async def trusted_host_middleware(scope, receive, send):
-        if scope["type"] == "http":
-            scope["server"] = ("0.0.0.0", scope.get("server", ("0.0.0.0", 8123))[1])
-        await app(scope, receive, send)
+    async def dispatch(self, request: Request, call_next):
+        # Rewrite Host header to pass validation
+        # This allows connections from Docker container names, etc.
+        if "host" in request.headers:
+            # Create new headers dict with localhost
+            scope = request.scope
+            headers = list(scope.get("headers", []))
+            new_headers = []
+            for name, value in headers:
+                if name.lower() == b"host":
+                    new_headers.append((b"host", b"localhost:8123"))
+                else:
+                    new_headers.append((name, value))
+            scope["headers"] = new_headers
 
-    return trusted_host_middleware
+        response = await call_next(request)
+        return response
 
 
 mcp = FastMCP(
     name="filesystem",
-    json_response=False,
-    stateless_http=False,
 )
 
 ALLOWED_ROOT: Path | None = None
@@ -343,10 +355,18 @@ def main() -> None:
     print(f"Trust any host: {args.trust_any_host}")
     print(f"Listening on: http://0.0.0.0:{args.port}/mcp")
 
-    # Wrap app with middleware to accept any Host header if enabled
-    app = mcp.streamable_http_app
+    # Create middleware list for trust-any-host support
+    middleware = []
     if args.trust_any_host:
-        app = create_trusted_host_middleware(app)
+        middleware.append(Middleware(TrustedHostMiddleware))
+
+    # Create ASGI app with middleware
+    app = mcp.http_app(
+        transport="streamable-http",
+        middleware=middleware if middleware else None,
+        json_response=False,
+        stateless_http=False,
+    )
 
     config = Config(
         app,
