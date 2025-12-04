@@ -1,12 +1,14 @@
 """Filesystem MCP Server with Streamable HTTP support."""
 
 import argparse
+import asyncio
 import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import uvicorn
+from uvicorn import Config, Server
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP(
@@ -322,7 +324,16 @@ def main() -> None:
     print(f"Allowed root: {ALLOWED_ROOT}")
     print(f"Listening on: http://0.0.0.0:{args.port}/mcp")
 
-    uvicorn.run(mcp.streamable_http_app, host="0.0.0.0", port=args.port)
+    config = Config(
+        mcp.streamable_http_app,
+        host="0.0.0.0",
+        port=args.port,
+        server_header=False,
+        forwarded_allow_ips="*",
+        proxy_headers=True,
+    )
+    server = Server(config)
+    asyncio.run(server.serve())
 
 
 if __name__ == "__main__":
