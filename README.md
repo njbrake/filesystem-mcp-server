@@ -2,6 +2,8 @@
 
 Modern Streamable HTTP supported filesystem MCP server that provides comprehensive filesystem operations through the Model Context Protocol.
 
+I saw https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem but it didn't have the Streamable HTTP support that I wanted for my project.
+
 ## Features
 
 - **Streamable HTTP Transport** - Uses the latest MCP Streamable HTTP protocol (not deprecated SSE)
