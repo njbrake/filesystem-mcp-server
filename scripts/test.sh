@@ -46,7 +46,7 @@ done
 echo ""
 
 echo "Test 1: Initialize session..."
-INIT_RESPONSE=$(curl -s -X POST "http://localhost:$PORT/mcp" \
+INIT_RESPONSE=$(curl -s -i -X POST "http://localhost:$PORT/mcp" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{
@@ -60,28 +60,62 @@ INIT_RESPONSE=$(curl -s -X POST "http://localhost:$PORT/mcp" \
     "id":1
   }')
 
-if echo "$INIT_RESPONSE" | jq -e '.result' > /dev/null 2>&1; then
-  echo "✓ Session initialized"
+echo "  Response headers:"
+echo "$INIT_RESPONSE" | grep -i "HTTP/\|content-type\|mcp-session-id" | sed 's/^/    /'
+
+# Extract session ID from headers
+SESSION_ID=$(echo "$INIT_RESPONSE" | grep -i "^mcp-session-id:" | sed 's/^mcp-session-id: //i' | tr -d '\r\n')
+if [ -n "$SESSION_ID" ]; then
+  echo "  ✓ Session ID: $SESSION_ID"
+else
+  echo "  ⚠ No Mcp-Session-Id header found"
+fi
+
+# Parse SSE response (extract JSON from "data: " line)
+INIT_JSON=$(echo "$INIT_RESPONSE" | grep "^data: " | sed 's/^data: //')
+if echo "$INIT_JSON" | jq -e '.result' > /dev/null 2>&1; then
+  SERVER_NAME=$(echo "$INIT_JSON" | jq -r '.result.serverInfo.name')
+  echo "  ✓ Session initialized (server: $SERVER_NAME)"
 else
   echo "✗ Session initialization failed"
-  echo "Response: $INIT_RESPONSE"
+  echo "Full Response:"
+  echo "$INIT_RESPONSE"
   docker logs "$CONTAINER_NAME"
   exit 1
 fi
 echo ""
 
-echo "Test 2: Listing tools..."
-TOOLS_RESPONSE=$(curl -s -X POST "http://localhost:$PORT/mcp" \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -d '{"jsonrpc":"2.0","method":"tools/list","id":2}')
+echo "Test 2: Listing tools (with session ID)..."
+if [ -n "$SESSION_ID" ]; then
+  TOOLS_RESPONSE=$(curl -s -i -X POST "http://localhost:$PORT/mcp" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -H "Mcp-Session-Id: $SESSION_ID" \
+    -d '{"jsonrpc":"2.0","method":"tools/list","id":2}')
+  echo "  Using session ID: $SESSION_ID"
+else
+  TOOLS_RESPONSE=$(curl -s -i -X POST "http://localhost:$PORT/mcp" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","method":"tools/list","id":2}')
+  echo "  No session ID available"
+fi
 
-TOOL_COUNT=$(echo "$TOOLS_RESPONSE" | jq '.result.tools | length' 2>/dev/null || echo "0")
+echo "  Response headers:"
+echo "$TOOLS_RESPONSE" | grep -i "HTTP/\|content-type" | sed 's/^/    /'
+
+# Parse SSE response
+TOOLS_JSON=$(echo "$TOOLS_RESPONSE" | grep "^data: " | sed 's/^data: //')
+TOOL_COUNT=$(echo "$TOOLS_JSON" | jq '.result.tools | length' 2>/dev/null || echo "0")
 if [ "$TOOL_COUNT" -ge 8 ]; then
-  echo "✓ Found $TOOL_COUNT tools"
+  echo "  ✓ Found $TOOL_COUNT tools"
+  # Show first few tool names
+  TOOL_NAMES=$(echo "$TOOLS_JSON" | jq -r '.result.tools[0:3] | .[].name' | tr '\n' ', ' | sed 's/,$//')
+  echo "  Tools: $TOOL_NAMES..."
 else
   echo "✗ Expected at least 8 tools, got $TOOL_COUNT"
-  echo "Response: $TOOLS_RESPONSE"
+  echo "Full Response:"
+  echo "$TOOLS_RESPONSE"
   exit 1
 fi
 echo ""
