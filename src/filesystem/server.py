@@ -320,9 +320,9 @@ def main() -> None:
 
     print(f"Starting Filesystem MCP Server")
     print(f"Allowed root: {ALLOWED_ROOT}")
-    print(f"Listening on: http://localhost:{args.port}/mcp")
+    print(f"Listening on: http://0.0.0.0:{args.port}/mcp")
 
-    uvicorn.run(mcp.streamable_http_app, host="localhost", port=args.port)
+    uvicorn.run(mcp.streamable_http_app, host="0.0.0.0", port=args.port)
 
 
 if __name__ == "__main__":
