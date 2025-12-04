@@ -12,17 +12,15 @@ from uvicorn import Config, Server
 from mcp.server.fastmcp import FastMCP
 
 
-class TrustedHostMiddleware:
-    """Middleware to accept any Host header for Docker networking."""
+def create_trusted_host_middleware(app):
+    """Create middleware that accepts any Host header for Docker networking."""
 
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, scope, receive, send):
+    async def trusted_host_middleware(scope, receive, send):
         if scope["type"] == "http":
-            # Accept any host header
             scope["server"] = ("0.0.0.0", scope.get("server", ("0.0.0.0", 8123))[1])
-        await self.app(scope, receive, send)
+        await app(scope, receive, send)
+
+    return trusted_host_middleware
 
 
 mcp = FastMCP(
@@ -348,7 +346,7 @@ def main() -> None:
     # Wrap app with middleware to accept any Host header if enabled
     app = mcp.streamable_http_app
     if args.trust_any_host:
-        app = TrustedHostMiddleware(app)
+        app = create_trusted_host_middleware(app)
 
     config = Config(
         app,
