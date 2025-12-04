@@ -361,11 +361,12 @@ def main() -> None:
         middleware.append(Middleware(TrustedHostMiddleware))
 
     # Create ASGI app with middleware
+    # Use stateless_http=True for production deployments
     app = mcp.http_app(
         transport="streamable-http",
         middleware=middleware if middleware else None,
         json_response=False,
-        stateless_http=False,
+        stateless_http=True,
     )
 
     config = Config(
