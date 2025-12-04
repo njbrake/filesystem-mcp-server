@@ -9,7 +9,7 @@ COPY pyproject.toml .python-version ./
 COPY src ./src
 
 RUN uv venv && \
-    uv pip install --no-cache -e .
+    uv pip install --no-cache .
 
 FROM python:3.12-slim
 
@@ -25,5 +25,5 @@ EXPOSE 8123
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["filesystem-mcp"]
+ENTRYPOINT ["python", "-m", "filesystem.server"]
 CMD ["--allowed-root", "/data", "--port", "8123"]
