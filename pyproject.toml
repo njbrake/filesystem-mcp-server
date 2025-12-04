@@ -18,3 +18,77 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/filesystem"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = [
+  "TD",
+  "FIX",
+  "D100",
+  "D104",
+  "D203",
+  "D213",
+  "FBT",
+  "COM",
+  "ANN",
+  "ARG",
+  "S101",
+  "E501",
+  "INP001",
+  "PERF",
+  "PLR",
+  "SIM",
+  "PTH",
+  "DTZ005",
+  "BLE001",
+  "TRY004",
+  "S113",
+  "PLW2901",
+  "C901",
+  "ERA001",
+  "SLF001",
+  "PLC0415",
+  "PLR0912",
+  "PLR0913",
+  "N999",
+  "B024",
+]
+extend-select = ["ALL"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "N802"]
+"src/filesystem/server.py" = ["S104"]
+
+[tool.mypy]
+strict = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+follow_untyped_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = ["pytest"]
+ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+  { include-group = "lint" },
+  { include-group = "tests" },
+]
+
+lint = [
+  "pre-commit==4.3.0",
+  "pre-commit-uv==4.2.0",
+  "mypy",
+]
+
+tests = [
+  "pytest>=8,<9",
+  "pytest-cov>=6.2.1,<7",
+  "pytest-asyncio>=0.26.0",
+]
