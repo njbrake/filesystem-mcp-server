@@ -11,6 +11,20 @@ import uvicorn
 from uvicorn import Config, Server
 from mcp.server.fastmcp import FastMCP
 
+
+class TrustedHostMiddleware:
+    """Middleware to accept any Host header for Docker networking."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            # Accept any host header
+            scope["server"] = ("0.0.0.0", scope.get("server", ("0.0.0.0", 8123))[1])
+        await self.app(scope, receive, send)
+
+
 mcp = FastMCP(
     name="filesystem",
     json_response=False,
@@ -307,6 +321,12 @@ def main() -> None:
         default=".",
         help="Root directory for filesystem operations (default: current directory)",
     )
+    parser.add_argument(
+        "--trust-any-host",
+        action="store_true",
+        default=True,
+        help="Accept connections from any hostname (default: enabled for Docker)",
+    )
     args = parser.parse_args()
 
     global ALLOWED_ROOT
@@ -322,10 +342,16 @@ def main() -> None:
 
     print(f"Starting Filesystem MCP Server")
     print(f"Allowed root: {ALLOWED_ROOT}")
+    print(f"Trust any host: {args.trust_any_host}")
     print(f"Listening on: http://0.0.0.0:{args.port}/mcp")
 
+    # Wrap app with middleware to accept any Host header if enabled
+    app = mcp.streamable_http_app
+    if args.trust_any_host:
+        app = TrustedHostMiddleware(app)
+
     config = Config(
-        mcp.streamable_http_app,
+        app,
         host="0.0.0.0",
         port=args.port,
         server_header=False,
