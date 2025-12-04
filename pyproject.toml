@@ -1,0 +1,16 @@
+[project]
+name = "filesystem-mcp-server"
+version = "0.1.0"
+description = "MCP server for filesystem operations with Streamable HTTP support"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp>=1.9.0",
+    "uvicorn>=0.34.0",
+]
+
+[project.scripts]
+filesystem-mcp = "filesystem.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
