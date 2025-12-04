@@ -8,7 +8,8 @@ RUN pip install --no-cache-dir uv
 COPY pyproject.toml .python-version ./
 COPY src ./src
 
-RUN uv sync --frozen --no-dev
+RUN uv venv && \
+    uv pip install --no-cache -e .
 
 FROM python:3.12-slim
 
