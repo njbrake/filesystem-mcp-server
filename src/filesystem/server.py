@@ -4,7 +4,6 @@ import argparse
 import logging
 from pathlib import Path
 
-import uvicorn
 from fastmcp import FastMCP
 
 from . import tools, utils
@@ -50,12 +49,7 @@ def main() -> None:
     logger.info("Allowed root: %s", utils.ALLOWED_ROOT)
     logger.info("Listening on: http://0.0.0.0:%s/mcp", args.port)
 
-    app = mcp.http_app(
-        transport="streamable-http",
-    )
-
-    # Run with uvicorn - this properly manages the FastMCP lifespan
-    uvicorn.run(app, host="0.0.0.0", port=args.port)
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=args.port)
 
 
 if __name__ == "__main__":
