@@ -50,12 +50,8 @@ def main() -> None:
     logger.info("Allowed root: %s", utils.ALLOWED_ROOT)
     logger.info("Listening on: http://0.0.0.0:%s/mcp", args.port)
 
-    # Create ASGI app with middleware
-    # Use stateless_http=False to maintain sessions properly
     app = mcp.http_app(
         transport="streamable-http",
-        json_response=False,
-        stateless_http=False,
     )
 
     # Run with uvicorn - this properly manages the FastMCP lifespan
