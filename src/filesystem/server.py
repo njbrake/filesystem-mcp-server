@@ -59,14 +59,7 @@ def main() -> None:
     )
 
     # Run with uvicorn - this properly manages the FastMCP lifespan
-    uvicorn.run(
-        app,
-        host="0.0.0.0",
-        port=args.port,
-        server_header=False,
-        forwarded_allow_ips="*",
-        proxy_headers=True,
-    )
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ def register_tools(mcp: "FastMCP") -> None:
 
     Args:
         mcp: FastMCP instance to register tools with
+
     """
 
     @mcp.tool()
@@ -26,6 +27,7 @@ def register_tools(mcp: "FastMCP") -> None:
 
         Returns:
             File contents as string
+
         """
         validated_path = validate_path(path)
 
@@ -51,6 +53,7 @@ def register_tools(mcp: "FastMCP") -> None:
 
         Returns:
             Formatted string with directory contents including metadata
+
         """
         validated_path = validate_path(path)
 
@@ -89,6 +92,7 @@ def register_tools(mcp: "FastMCP") -> None:
 
         Returns:
             Success message
+
         """
         validated_path = validate_path(path)
 
@@ -113,14 +117,14 @@ def register_tools(mcp: "FastMCP") -> None:
 
         Returns:
             Success message
+
         """
         validated_path = validate_path(path)
 
         if validated_path.exists():
             if validated_path.is_dir():
                 return f"Directory already exists: {path}"
-            else:
-                raise ValueError(f"Path exists but is not a directory: {path}")
+            raise ValueError(f"Path exists but is not a directory: {path}")
 
         try:
             validated_path.mkdir(parents=True, exist_ok=True)
@@ -137,6 +141,7 @@ def register_tools(mcp: "FastMCP") -> None:
 
         Returns:
             Success message
+
         """
         validated_path = validate_path(path)
 
@@ -162,6 +167,7 @@ def register_tools(mcp: "FastMCP") -> None:
 
         Returns:
             Success message
+
         """
         validated_path = validate_path(path)
 
@@ -175,9 +181,8 @@ def register_tools(mcp: "FastMCP") -> None:
             if recursive:
                 shutil.rmtree(validated_path)
                 return f"Successfully deleted directory and contents: {path}"
-            else:
-                validated_path.rmdir()
-                return f"Successfully deleted empty directory: {path}"
+            validated_path.rmdir()
+            return f"Successfully deleted empty directory: {path}"
         except OSError as e:
             if "not empty" in str(e).lower():
                 raise ValueError(f"Directory not empty (use recursive=true to delete): {path}")
@@ -193,6 +198,7 @@ def register_tools(mcp: "FastMCP") -> None:
 
         Returns:
             Success message
+
         """
         validated_source = validate_path(source)
         validated_dest = validate_path(destination)
@@ -222,6 +228,7 @@ def register_tools(mcp: "FastMCP") -> None:
 
         Returns:
             Formatted string with file metadata
+
         """
         validated_path = validate_path(path)
 

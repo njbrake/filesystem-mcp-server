@@ -16,6 +16,7 @@ def validate_path(relative_path: str) -> Path:
 
     Raises:
         ValueError: If path is outside allowed root or ALLOWED_ROOT not set
+
     """
     if ALLOWED_ROOT is None:
         raise ValueError("Server not properly initialized: ALLOWED_ROOT not set")
